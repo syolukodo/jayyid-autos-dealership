@@ -1,0 +1,79 @@
+{
+  "plans": [
+    {
+      "ref": "JA-PAY-10241",
+      "customer": "Tunde Bakare",
+      "vehicle": "2022 Toyota Land Cruiser Prado TX-L",
+      "total": 65000000,
+      "deposit": 65000000,
+      "balance": 0,
+      "next_due": "Settled",
+      "status": "Completed"
+    },
+    {
+      "ref": "JA-PAY-10238",
+      "customer": "Ngozi Eze",
+      "vehicle": "2020 Mercedes-Benz GLE 350 4MATIC",
+      "total": 42000000,
+      "deposit": 12600000,
+      "balance": 29400000,
+      "next_due": "28 Nov 2026",
+      "status": "Active Schedule"
+    },
+    {
+      "ref": "JA-PAY-10233",
+      "customer": "Bisi Adeleke",
+      "vehicle": "2022 Honda Accord EX-L",
+      "total": 28500000,
+      "deposit": 8550000,
+      "balance": 19950000,
+      "next_due": "14 Oct 2026",
+      "status": "Overdue"
+    },
+    {
+      "ref": "JA-PAY-10229",
+      "customer": "Ibrahim Abdulkabir",
+      "vehicle": "2021 Toyota Hiace GL Executive",
+      "total": 33000000,
+      "deposit": 9900000,
+      "balance": 23100000,
+      "next_due": "02 Dec 2026",
+      "status": "Active Schedule"
+    },
+    {
+      "ref": "JA-PAY-10224",
+      "customer": "Fatima Yusuf",
+      "vehicle": "2021 Toyota Corolla LE",
+      "total": 19500000,
+      "deposit": 5850000,
+      "balance": 13650000,
+      "next_due": "09 Dec 2026",
+      "status": "Active Schedule"
+    },
+    {
+      "ref": "JA-PAY-10219",
+      "customer": "Ibrahim Sule",
+      "vehicle": "2023 Ford Ranger Wildtrak",
+      "total": 54000000,
+      "deposit": 16200000,
+      "balance": 37800000,
+      "next_due": "30 Sep 2026",
+      "status": "Overdue"
+    }
+  ],
+  "plan": {
+    "vehicle": "2020 Mercedes-Benz GLE 350 4MATIC",
+    "total": 42000000,
+    "deposit": 12600000,
+    "paid": 25200000,
+    "balance": 16800000,
+    "instalments": [
+      { "due": "28 Aug 2026", "amount": 6300000, "status": "Paid" },
+      { "due": "28 Sep 2026", "amount": 6300000, "status": "Paid" },
+      { "due": "28 Oct 2026", "amount": 6300000, "status": "Paid" },
+      { "due": "28 Nov 2026", "amount": 6300000, "status": "Due" },
+      { "due": "28 Dec 2026", "amount": 6300000, "status": "Upcoming" },
+      { "due": "28 Jan 2027", "amount": 6300000, "status": "Upcoming" }
+    ]
+  }
+}

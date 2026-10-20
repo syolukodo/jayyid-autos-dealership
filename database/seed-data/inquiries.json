@@ -1,0 +1,102 @@
+{
+  "leads": [
+    {
+      "ref": "JA-INQ-4F2A9C",
+      "name": "Ibrahim Abdulkabir",
+      "phone": "+234 803 111 2244",
+      "vehicle": "2022 Toyota Land Cruiser Prado TX-L",
+      "topic": "Inspection report request",
+      "date": "06 Oct 2026",
+      "status": "New"
+    },
+    {
+      "ref": "JA-INQ-8B71D0",
+      "name": "Fatima Yusuf",
+      "phone": "+234 805 990 1122",
+      "vehicle": "2021 Toyota Corolla LE",
+      "topic": "Payment plan",
+      "date": "05 Oct 2026",
+      "status": "New"
+    },
+    {
+      "ref": "JA-INQ-2C55E7",
+      "name": "Tunde Bakare",
+      "phone": "+234 802 445 7788",
+      "vehicle": "2023 Ford Ranger Wildtrak",
+      "topic": "Vehicle enquiry",
+      "date": "04 Oct 2026",
+      "status": "Contacted"
+    },
+    {
+      "ref": "JA-INQ-9A13F2",
+      "name": "Ngozi Eze",
+      "phone": "+234 806 332 9010",
+      "vehicle": "2020 Mercedes-Benz GLE 350 4MATIC",
+      "topic": "Trade-in valuation",
+      "date": "03 Oct 2026",
+      "status": "Contacted"
+    },
+    {
+      "ref": "JA-INQ-6D80B4",
+      "name": "Ibrahim Sule",
+      "phone": "+234 809 776 5543",
+      "vehicle": "2021 Toyota Hiace GL Executive",
+      "topic": "Vehicle enquiry",
+      "date": "02 Oct 2026",
+      "status": "Closed"
+    },
+    {
+      "ref": "JA-INQ-3E62A1",
+      "name": "Bisi Adeleke",
+      "phone": "+234 801 224 6677",
+      "vehicle": "2022 Honda Accord EX-L",
+      "topic": "After-sales / documentation",
+      "date": "01 Oct 2026",
+      "status": "Closed"
+    }
+  ],
+  "mine": [
+    {
+      "ref": "INQ-2418",
+      "vehicle": "2022 Toyota Land Cruiser Prado",
+      "type": "Inspection request",
+      "date": "18 Nov 2026",
+      "status": "New"
+    },
+    {
+      "ref": "INQ-2391",
+      "vehicle": "2021 Toyota Corolla LE",
+      "type": "Test drive",
+      "date": "12 Nov 2026",
+      "status": "Contacted"
+    },
+    {
+      "ref": "INQ-2354",
+      "vehicle": "2020 Honda Accord",
+      "type": "Price & finance enquiry",
+      "date": "04 Nov 2026",
+      "status": "Resolved"
+    },
+    {
+      "ref": "INQ-2340",
+      "vehicle": "2023 Ford Ranger Wildtrak",
+      "type": "Trade-in valuation",
+      "date": "29 Oct 2026",
+      "status": "Contacted"
+    },
+    {
+      "ref": "INQ-2322",
+      "vehicle": "2021 Toyota Hiace GL Executive",
+      "type": "Inspection request",
+      "date": "21 Oct 2026",
+      "status": "New"
+    },
+    {
+      "ref": "INQ-2301",
+      "vehicle": "2020 Mercedes-Benz GLE 350 4MATIC",
+      "type": "Documentation & after-sales",
+      "date": "10 Oct 2026",
+      "status": "Resolved"
+    }
+  ]
+}

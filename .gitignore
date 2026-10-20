@@ -1,0 +1,40 @@
+# Environment & credentials (never commit real keys)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+/auth.json
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Laravel runtime artifacts (directories are kept by their own .gitignore files)
+/storage/*.key
+/storage/pail
+/storage/payments.json
+/public/hot
+/public/storage
+/bootstrap/cache/*.php
+.phpunit.result.cache
+/.phpunit.cache
+*.log
+
+# Back-office uploads (vehicle photos, popup adverts) - user data, not source
+/public/uploads/
+/public/assets/uploads/
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.fleet/
+.zed/
+*.swp
+*.swo
+*.tmp
+
+# Stray env file from another project (holds secrets) - never commit it
+/env

@@ -1,0 +1,9 @@
+<svg width="300" height="70" viewBox="0 0 300 70" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Jayyid Autos">
+  <g stroke="#ffffff" stroke-width="1.5" fill="none">
+    <path d="M28 44v-18l-10-8-10 8v18h6v-10h8v10z"/>
+    <circle cx="18" cy="28" r="2.5"/>
+  </g>
+  <text x="48" y="26" font-family="Chillax, Inter, system-ui, sans-serif" font-weight="700" font-size="14" fill="#ffffff">JAYYID</text>
+  <text x="48" y="44" font-family="Chillax, Inter, system-ui, sans-serif" font-weight="700" font-size="14" fill="#f95738">AUTOS</text>
+  <text x="48" y="58" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#ffffff" letter-spacing="0.24em" opacity="0.8">CERTIFIED VEHICLES</text>
+</svg>
