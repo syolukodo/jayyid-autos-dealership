@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureActiveAccount;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsureStaffAccess;
+use App\Http\Middleware\SecurityHeaders;
 use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [EnsureActiveAccount::class]);
+        $middleware->web(append: [EnsureActiveAccount::class, SecurityHeaders::class]);
 
         $middleware->alias([
             'customer' => EnsureCustomer::class,

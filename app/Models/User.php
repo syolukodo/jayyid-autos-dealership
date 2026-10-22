@@ -134,6 +134,18 @@ class User extends Authenticatable
         $query->where('role', '<>', UserRole::Customer);
     }
 
+    /**
+     * Every column except the profile photo (a data URI of up to ~400KB), for lists that never show it.
+     * Apply before withCount()/addSelect(), which add to this column list.
+     */
+    public function scopeWithoutAvatar(Builder $query): void
+    {
+        $query->select(array_map(fn (string $column) => 'users.'.$column, [
+            'id', 'full_name', 'email', 'phone_number', 'address', 'password', 'role', 'status',
+            'email_verified_at', 'invite_token_hash', 'invite_expires_at', 'created_at', 'updated_at',
+        ]));
+    }
+
     public function scopeActive(Builder $query): void
     {
         $query->where('status', UserStatus::Active);

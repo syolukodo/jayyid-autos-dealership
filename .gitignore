@@ -22,7 +22,8 @@
 *.log
 
 # Back-office uploads (vehicle photos, popup adverts) - user data, not source
-/public/uploads/
+/public/uploads/*
+!/public/uploads/.htaccess
 /public/assets/uploads/
 
 # OS & IDE

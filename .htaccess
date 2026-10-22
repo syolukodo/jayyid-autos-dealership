@@ -1,5 +1,5 @@
 # Serves the Laravel app when the web root is this project folder (e.g. XAMPP
-# at http://localhost/jayyid-autos). Where you control the server, point the
+# at http://localhost/jayyid-autos-dealership). Where you control the server, point the
 # document root at public/ instead and this file is ignored.
 
 <IfModule mod_rewrite.c>
@@ -28,7 +28,7 @@
     Require all denied
 </IfModule>
 
-# Defence in depth: never serve environment files.
-<FilesMatch "^\.env">
+# Defence in depth: never serve environment files (including a stray "env").
+<FilesMatch "^\.?env(\..*)?$">
     Require all denied
 </FilesMatch>

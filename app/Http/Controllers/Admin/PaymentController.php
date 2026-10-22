@@ -15,7 +15,7 @@ class PaymentController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        $schedules = PaymentSchedule::query()->with(['user', 'vehicle', 'instalments'])->latest()->orderByDesc('id')->get();
+        $schedules = PaymentSchedule::query()->with(['user' => fn ($query) => $query->withoutAvatar(), 'vehicle', 'instalments'])->latest()->orderByDesc('id')->get();
 
         $search = trim(preg_replace('/\s+/', ' ', (string) $request->query('q', '')) ?? '');
         $status = PaymentStatus::tryFrom((string) $request->query('status', ''));

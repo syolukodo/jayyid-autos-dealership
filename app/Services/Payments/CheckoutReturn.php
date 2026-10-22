@@ -54,11 +54,11 @@ class CheckoutReturn
                 ? Payment::query()->where('reference', $reference)->first()
                 : ($orderId !== '' ? Payment::query()->where('gateway_reference', $orderId)->first() : null);
 
-            if ($payment === null) {
+            if ($payment === null || ! $payment->belongsToUser($user)) {
                 return $this->result(error: 'We could not match that PayPal payment to your account.');
             }
 
-            return $this->outcome($this->payments->settlePayPal($payment, $orderId), $user, 'PayPal');
+            return $this->outcome($this->payments->settlePayPal($payment), 'PayPal');
         }
 
         if ($reference === '') {
@@ -66,22 +66,18 @@ class CheckoutReturn
         }
 
         $payment = Payment::query()->where('reference', $reference)->first();
-        if ($payment === null) {
+        if ($payment === null || ! $payment->belongsToUser($user)) {
             return $this->result(error: 'We could not find that payment on your account.');
         }
 
-        return $this->outcome($this->payments->settlePaystack($payment), $user, 'the bank');
+        return $this->outcome($this->payments->settlePaystack($payment), 'the bank');
     }
 
     /**
      * @return array{notice: string, error: string, paid: ?Payment, preview: bool}
      */
-    private function outcome(Payment $payment, User $user, string $confirmer): array
+    private function outcome(Payment $payment, string $confirmer): array
     {
-        if (! $payment->belongsToUser($user)) {
-            return $this->result(error: 'We could not find that payment on your account.');
-        }
-
         return match ($payment->status) {
             PaymentStatus::Failed => $this->result(error: 'The payment was not completed and you have not been charged. You can try again.'),
             PaymentStatus::Mismatch => $this->result(error: 'Your payment needs a manual review. Please contact our sales team with reference '.$payment->reference.'.'),

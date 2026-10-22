@@ -15,7 +15,7 @@ class DashboardController extends Controller
 {
     public function __invoke(): View
     {
-        $schedules = PaymentSchedule::query()->with(['user', 'vehicle', 'instalments'])->latest()->orderByDesc('id')->get();
+        $schedules = PaymentSchedule::query()->with(['user' => fn ($query) => $query->withoutAvatar(), 'vehicle', 'instalments'])->latest()->orderByDesc('id')->get();
 
         return view('admin.dashboard', [
             'totalVehicles' => Vehicle::query()->count(),

@@ -20,6 +20,7 @@ class UserController extends Controller
     {
         $customers = User::query()
             ->customers()
+            ->withoutAvatar()
             ->withCount('savedVehicles')
             ->addSelect([
                 'inquiries_count' => Inquiry::query()
@@ -36,7 +37,7 @@ class UserController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $staff = User::query()->staff()->oldest()->orderBy('id')->get();
+        $staff = User::query()->staff()->withoutAvatar()->oldest()->orderBy('id')->get();
 
         return view('admin.users', [
             'customers' => $customers,

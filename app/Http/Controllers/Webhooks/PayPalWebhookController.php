@@ -43,7 +43,7 @@ class PayPalWebhookController extends Controller
             };
 
             if ($payment !== null) {
-                $payments->settlePayPal($payment, $orderId);
+                $payments->settlePayPal($payment);
             }
         }
 

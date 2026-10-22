@@ -2,7 +2,7 @@
 
 /*
  * Front controller for hosts whose document root is this project folder
- * rather than public/ (e.g. XAMPP at http://localhost/jayyid-autos, or
+ * rather than public/ (e.g. XAMPP at http://localhost/jayyid-autos-dealership, or
  * shared hosting). The root .htaccess serves static files from public/ and
  * routes everything else here, so Laravel sees the correct base URL.
  *

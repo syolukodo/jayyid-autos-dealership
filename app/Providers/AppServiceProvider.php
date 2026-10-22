@@ -33,9 +33,11 @@ class AppServiceProvider extends ServiceProvider
         Model::preventLazyLoading(! $this->app->environment('production'));
         Model::preventSilentlyDiscardingAttributes(! $this->app->environment('production'));
 
-        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(10)->by(
-            mb_strtolower((string) $request->input('email')).'|'.$request->ip()
-        ));
+        // Per account from one address, plus a ceiling per address so one machine cannot spray many accounts.
+        RateLimiter::for('login', fn (Request $request) => [
+            Limit::perMinute(10)->by(mb_strtolower((string) $request->input('email')).'|'.$request->ip()),
+            Limit::perMinute(30)->by('ip|'.$request->ip()),
+        ]);
 
         View::composer(['layouts.*', 'pages.*', 'auth.*', 'account.*', 'admin.*', 'emails.*', 'receipts.*'], function ($view) {
             $view->with('business', $this->app->make(Business::class));

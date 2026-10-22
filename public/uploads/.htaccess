@@ -1,0 +1,10 @@
+# Back-office uploads are images only. Never run or render anything else from
+# here, even if a script were smuggled in under an image-looking name.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<FilesMatch "(?i)\.(php\d?|phtml|phar|pht|cgi|pl|py|sh|html?|svg|js)$">
+    Require all denied
+</FilesMatch>
+Options -Indexes -ExecCGI
+RemoveHandler .php .phtml .phar .pht

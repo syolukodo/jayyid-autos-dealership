@@ -3,6 +3,7 @@
 namespace App\Services\Payments;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -51,6 +52,11 @@ class PayPalGateway
         if ($webhookId === '' || ! $this->isConfigured()) {
             Log::warning('PayPal webhook rejected: PAYPAL_WEBHOOK_ID is not configured.');
 
+            return false;
+        }
+
+        // Turn away unsigned deliveries before calling PayPal, so junk POSTs cannot tie up workers on outbound requests.
+        if (in_array('', $headers, true)) {
             return false;
         }
 
@@ -109,6 +115,13 @@ class PayPalGateway
             return '';
         }
 
+        // Tokens last hours; reuse one across requests instead of an extra round trip per PayPal call.
+        $cacheKey = 'paypal.token.'.hash('sha256', config('services.paypal.mode').'|'.config('services.paypal.client_id'));
+        $cached = Cache::get($cacheKey);
+        if (is_string($cached) && $cached !== '') {
+            return $this->accessToken = $cached;
+        }
+
         try {
             $response = Http::baseUrl($this->baseUrl())
                 ->withBasicAuth((string) config('services.paypal.client_id'), (string) config('services.paypal.secret'))
@@ -126,6 +139,8 @@ class PayPalGateway
         $token = (string) $response->json('access_token', '');
         if ($token === '') {
             Log::error('PayPal token request failed', ['error' => $response->json('error_description') ?? $response->json('error')]);
+        } else {
+            Cache::put($cacheKey, $token, max(60, (int) $response->json('expires_in', 0) - 300));
         }
 
         return $this->accessToken = $token;

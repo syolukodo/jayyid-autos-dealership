@@ -293,6 +293,33 @@ class PaymentsTest extends TestCase
             ->assertSee('$645.17 USD');
     }
 
+    public function test_a_paypal_return_cannot_settle_a_payment_with_another_orders_token(): void
+    {
+        config(['services.paypal' => ['mode' => 'sandbox', 'client_id' => 'id', 'secret' => 'secret', 'currency' => 'USD', 'exchange_rate' => '1550', 'webhook_id' => null]]);
+        Http::fake([
+            '*/v1/oauth2/token' => Http::response(['access_token' => 'TOKEN']),
+            // ORDER-PAID was captured for the first car; ORDER-OPEN (the second car) was never approved.
+            '*/v2/checkout/orders/ORDER-PAID/capture' => Http::response([
+                'status' => 'COMPLETED',
+                'purchase_units' => [['payments' => ['captures' => [['status' => 'COMPLETED', 'amount' => ['currency_code' => 'USD', 'value' => '1935.49']]]]]],
+            ]),
+            '*/v2/checkout/orders/ORDER-OPEN/capture' => Http::response(['name' => 'UNPROCESSABLE_ENTITY', 'details' => [['issue' => 'ORDER_NOT_APPROVED']]], 422),
+        ]);
+        $customer = $this->customer();
+        $paid = $this->pendingPayment($customer, Vehicle::factory()->create(), 'deposit', 3_000_000);
+        $paid->update(['method' => 'paypal', 'gateway_reference' => 'ORDER-PAID', 'gateway_currency' => 'USD', 'gateway_amount_minor' => 193549, 'exchange_rate' => 1550]);
+        $secondCar = Vehicle::factory()->create();
+        $unpaid = $this->pendingPayment($customer, $secondCar, 'deposit', 3_000_000);
+        $unpaid->update(['method' => 'paypal', 'gateway_reference' => 'ORDER-OPEN', 'gateway_currency' => 'USD', 'gateway_amount_minor' => 193549, 'exchange_rate' => 1550]);
+
+        // Same amount, so replaying the paid order's token against the second payment used to mark it paid too.
+        $this->actingAs($customer)->get(route('account.payments', ['paypal' => 1, 'reference' => $unpaid->reference, 'token' => 'ORDER-PAID']))->assertOk();
+
+        $this->assertSame(PaymentStatus::Pending, $unpaid->refresh()->status);
+        $this->assertSame(VehicleStatus::Available, $secondCar->refresh()->status);
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'ORDER-PAID'));
+    }
+
     public function test_checkout_shows_the_paypal_currency_and_rate(): void
     {
         config(['services.paypal' => ['mode' => 'sandbox', 'client_id' => 'id', 'secret' => 'secret', 'currency' => 'USD', 'exchange_rate' => '1550', 'webhook_id' => null]]);

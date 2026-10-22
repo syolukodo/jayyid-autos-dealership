@@ -21,7 +21,7 @@ php artisan key:generate
 php artisan migrate --seed    # fresh database with demo data
 ```
 
-Open <http://localhost/jayyid-autos>. The root `index.php` + `.htaccess` route
+Open <http://localhost/jayyid-autos-dealership>. The root `index.php` + `.htaccess` route
 requests into Laravel and serve static files from `public/`, so no virtual
 host is needed. On a server you control, point the document root at
 `public/` instead.

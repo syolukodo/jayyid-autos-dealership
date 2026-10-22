@@ -82,14 +82,15 @@ class PaymentService
     /**
      * Capture and reconcile a PayPal order (return trip or webhook).
      */
-    public function settlePayPal(Payment $payment, string $orderId = ''): Payment
+    public function settlePayPal(Payment $payment): Payment
     {
         if ($payment->isPaid() || ! $this->paypal->isConfigured()) {
             return $payment;
         }
 
-        // Prefer the order id PayPal handed back; fall back to the one recorded when the order was opened.
-        $orderId = $orderId !== '' ? $orderId : (string) $payment->gateway_reference;
+        // Only ever the order this payment opened. An id from the browser (?token=) could name another,
+        // already-captured order for the same amount, and one PayPal charge would settle two payments.
+        $orderId = (string) $payment->gateway_reference;
         if ($orderId === '') {
             return $payment;
         }
