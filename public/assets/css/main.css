@@ -6745,6 +6745,13 @@ body, p, span, a, label, input, select, button, td, th, li,
   transition: background 0.18s ease, border-color 0.18s ease;
 }
 
+/* The hover fill turns each column into a visible card, so every card needs the same inner
+   space on both sides. (The plain grid leaves the first column flush with the page edge.) */
+.service-grid.service-grid--overview .service-item {
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
 .service-grid--overview .service-item:hover {
   background: var(--color-warm);
   border-color: rgba(240, 90, 54, 0.5);
