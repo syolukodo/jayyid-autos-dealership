@@ -1,13 +1,14 @@
 # Deploys https://jayyidautos.com to Namecheap shared hosting (cPanel).
 #
 #   1. tests     - the full test suite must pass, or nothing is deployed
-#   2. deploy    - builds production dependencies and uploads changed files over FTPS
-#   3. finalize  - over SSH: runs migrations and rebuilds Laravel's caches,
-#                  then checks the live site answers
+#   2. deploy    - builds production dependencies, uploads changed files with rsync over SSH,
+#                  runs migrations and rebuilds Laravel's caches, then checks the live site
+#
+# SSH needs shell access on the cPanel account (Namecheap support enables it).
 #
 # Repository secrets (Settings > Secrets and variables > Actions):
-#   CPANEL_HOST        server hostname, e.g. server123.web-hosting.com (or ftp.jayyidautos.com)
-#   CPANEL_USERNAME    cPanel username (the main account, so SSH works too)
+#   CPANEL_HOST        server hostname, e.g. server123.web-hosting.com (or jayyidautos.com)
+#   CPANEL_USERNAME    cPanel username (the main account: SSH must be enabled for it)
 #   CPANEL_PASSWORD    cPanel password
 #   CPANEL_REMOTE_DIR  app folder relative to your home folder, e.g. jayyidautos/
 #                      (an absolute /home/<user>/jayyidautos/ also works)
@@ -77,11 +78,10 @@ jobs:
         run: php artisan test
 
   deploy:
-    name: Upload to cPanel
+    name: Deploy to cPanel
     needs: tests
     runs-on: ubuntu-latest
-    # The first upload sends all of vendor/ (thousands of files); later ones send only changes.
-    timeout-minutes: 90
+    timeout-minutes: 30
     environment:
       name: production
       url: ${{ env.SITE_URL }}
@@ -128,7 +128,13 @@ jobs:
       - name: Install production dependencies
         run: composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction --no-progress
 
-      # FTP paths start at the account's home folder and the action needs a trailing slash.
+      - name: Install sshpass
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq sshpass
+
+      # rsync paths are relative to the account's home folder. Refuse the home folder itself:
+      # it holds every domain on this account, and the app must live in its own folder.
       - name: Resolve remote folder
         id: remote
         env:
@@ -137,87 +143,98 @@ jobs:
         run: |
           dir="${REMOTE_DIR#/}"
           dir="${dir#home/"$CPANEL_USERNAME"/}"
+          dir="${dir#./}"
           dir="${dir%/}"
-          if [ "$dir" = "home/$CPANEL_USERNAME" ] || [ "$dir" = "." ]; then dir=""; fi
-          echo "dir=${dir:-.}/" >> "$GITHUB_OUTPUT"
+          if [ -z "$dir" ] || [ "$dir" = "." ] || [ "$dir" = "home/$CPANEL_USERNAME" ] || [ "$dir" = "public_html" ]; then
+            echo "::error::CPANEL_REMOTE_DIR must be the app's own folder (e.g. jayyidautos/), not the home folder or public_html."
+            exit 1
+          fi
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
 
-      # Only files changed since the last deploy are sent (tracked in .ftp-deploy-sync-state.json
-      # on the server). Files that exist only on the server (.env, uploads, logs) are left alone.
-      # Note: the storage/**/.gitignore placeholders must be uploaded - they create the storage folders.
-      - name: Upload over FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USERNAME }}
-          password: ${{ secrets.CPANEL_PASSWORD }}
-          protocol: ftps
-          port: 21
-          # Encrypted, but the certificate is not checked: cPanel's FTP certificate is issued to the
-          # server hostname. If CPANEL_HOST is that hostname you can change this to "strict".
-          security: loose
-          timeout: 120000
-          local-dir: ./
-          server-dir: ${{ steps.remote.outputs.dir }}
-          exclude: |
-            **/.git/**
-            **/.github/**
-            **/node_modules/**
-            tests/**
-            .env
-            .env.*
-            .editorconfig
-            .gitattributes
-            phpunit.xml
-            README.md
-
-  finalize:
-    name: Migrate and verify
-    needs: deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Run migrations and rebuild caches over SSH
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Check SSH access and create the app folder
         env:
-          REMOTE_DIR: ${{ secrets.CPANEL_REMOTE_DIR }}
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USERNAME }}
-          password: ${{ secrets.CPANEL_PASSWORD }}
-          port: ${{ vars.CPANEL_SSH_PORT || '21098' }}
-          envs: REMOTE_DIR
-          script: |
-            set -e
+          SSHPASS: ${{ secrets.CPANEL_PASSWORD }}
+          SSH_TARGET: ${{ secrets.CPANEL_USERNAME }}@${{ secrets.CPANEL_HOST }}
+          SSH_PORT: ${{ vars.CPANEL_SSH_PORT || '21098' }}
+          APP_DIR: ${{ steps.remote.outputs.dir }}
+        # cPanel answers a login without shell access with a notice and a success code, so the
+        # check passes only when the remote side prints the marker at the end.
+        run: |
+          mkdir -p ~/.ssh
+          output=$(sshpass -e ssh -p "$SSH_PORT" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$SSH_TARGET" \
+            "mkdir -p $(printf %q "$APP_DIR") && command -v rsync >/dev/null && echo SSH_READY" 2>&1) || true
+          echo "$output"
+          if ! grep -q '^SSH_READY$' <<<"$output"; then
+            echo "::error::SSH did not run commands on the server. If the output above says shell access is not enabled, ask Namecheap support to enable SSH (shell) access. Otherwise check CPANEL_HOST, CPANEL_USERNAME, CPANEL_PASSWORD and the SSH port ($SSH_PORT)."
+            exit 1
+          fi
 
-            case "$REMOTE_DIR" in
-              /home/*) APP_DIR="$REMOTE_DIR" ;;
-              *) APP_DIR="$HOME/${REMOTE_DIR#/}" ;;
-            esac
-            cd "$APP_DIR"
+      # One compressed stream; after the first deploy only changed files are sent.
+      # Nothing on the server is deleted, so its .env, uploaded photos, logs and sessions stay put.
+      # The storage/**/.gitignore placeholders are sent on purpose: they create the storage folders.
+      - name: Upload with rsync
+        env:
+          SSHPASS: ${{ secrets.CPANEL_PASSWORD }}
+          SSH_TARGET: ${{ secrets.CPANEL_USERNAME }}@${{ secrets.CPANEL_HOST }}
+          SSH_PORT: ${{ vars.CPANEL_SSH_PORT || '21098' }}
+          APP_DIR: ${{ steps.remote.outputs.dir }}
+        run: |
+          rsync -rlptz --checksum --chmod=D755,F644 --stats \
+            --exclude=/.git/ \
+            --exclude=/.github/ \
+            --exclude=/tests/ \
+            --exclude=/.env \
+            --exclude='/.env.*' \
+            --exclude=/.editorconfig \
+            --exclude=/.gitattributes \
+            --exclude=/phpunit.xml \
+            --exclude=/README.md \
+            -e "sshpass -e ssh -p $SSH_PORT -o StrictHostKeyChecking=accept-new" \
+            ./ "$SSH_TARGET:$APP_DIR/"
 
-            if [ ! -f .env ]; then
-              echo "No .env in $APP_DIR. Create it (see .env.example) and re-run this workflow."
-              exit 1
+      # Same marker rule as the SSH check: success is the last line, not the exit code.
+      - name: Run migrations and rebuild caches over SSH
+        env:
+          SSHPASS: ${{ secrets.CPANEL_PASSWORD }}
+          SSH_TARGET: ${{ secrets.CPANEL_USERNAME }}@${{ secrets.CPANEL_HOST }}
+          SSH_PORT: ${{ vars.CPANEL_SSH_PORT || '21098' }}
+          APP_DIR: ${{ steps.remote.outputs.dir }}
+        run: |
+          output=$(sshpass -e ssh -p "$SSH_PORT" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$SSH_TARGET" \
+            "APP_DIR=$(printf %q "$APP_DIR") bash -s" 2>&1 <<'REMOTE'
+          set -e
+          cd "$HOME/$APP_DIR"
+
+          if [ ! -f .env ]; then
+            echo "No .env in $HOME/$APP_DIR. Create it (see .env.example) and re-run this workflow."
+            exit 1
+          fi
+
+          # The shell's default "php" can be older than the version chosen in "Select PHP Version".
+          PHP=""
+          for candidate in php /opt/alt/php85/usr/bin/php /opt/alt/php84/usr/bin/php /opt/alt/php83/usr/bin/php /opt/alt/php82/usr/bin/php; do
+            if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -r 'exit(PHP_VERSION_ID >= 80200 ? 0 : 1);'; then
+              PHP="$candidate"
+              break
             fi
+          done
+          if [ -z "$PHP" ]; then
+            echo "PHP 8.2 or newer was not found. Choose it in cPanel > Select PHP Version."
+            exit 1
+          fi
+          "$PHP" -v | head -n 1
 
-            # The shell's default "php" can be older than the version chosen in "Select PHP Version".
-            PHP=""
-            for candidate in php /opt/alt/php84/usr/bin/php /opt/alt/php83/usr/bin/php /opt/alt/php82/usr/bin/php; do
-              if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -r 'exit(PHP_VERSION_ID >= 80200 ? 0 : 1);'; then
-                PHP="$candidate"
-                break
-              fi
-            done
-            if [ -z "$PHP" ]; then
-              echo "PHP 8.2 or newer was not found. Choose it in cPanel > Select PHP Version."
-              exit 1
-            fi
-            "$PHP" -v | head -n 1
-
-            "$PHP" artisan migrate --force
-            "$PHP" artisan optimize:clear
-            "$PHP" artisan optimize
+          "$PHP" artisan migrate --force
+          "$PHP" artisan optimize:clear
+          "$PHP" artisan optimize
+          echo DEPLOY_FINALIZED
+          REMOTE
+          ) || true
+          echo "$output"
+          if ! grep -q '^DEPLOY_FINALIZED$' <<<"$output"; then
+            echo "::error::Migrations did not finish on the server. See the output above."
+            exit 1
+          fi
 
       - name: Check the live site
         run: |
