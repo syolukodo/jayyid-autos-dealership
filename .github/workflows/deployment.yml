@@ -210,31 +210,42 @@ jobs:
             exit 1
           fi
 
-          # Shared hosts carry several PHP builds, and the shell's default "php" may lack the
-          # extensions enabled for the website. Use the first 8.2+ build that can reach MySQL.
-          PHP=""
-          for candidate in php /usr/bin/php /usr/local/bin/php \
+          # Shared hosts carry several PHP builds, and the extensions ticked in "Select PHP Version"
+          # may apply to the website only. Use the first 8.2+ command-line build that can reach
+          # MySQL, loading the extensions it needs by hand when they are not on by default.
+          PHP=()
+          for candidate in php /usr/local/bin/php \
             /opt/alt/php85/usr/bin/php /opt/alt/php84/usr/bin/php /opt/alt/php83/usr/bin/php /opt/alt/php82/usr/bin/php \
             /opt/cpanel/ea-php85/root/usr/bin/php /opt/cpanel/ea-php84/root/usr/bin/php \
             /opt/cpanel/ea-php83/root/usr/bin/php /opt/cpanel/ea-php82/root/usr/bin/php; do
             command -v "$candidate" >/dev/null 2>&1 || continue
-            if "$candidate" -r 'exit(PHP_VERSION_ID >= 80200 && extension_loaded("pdo_mysql") && extension_loaded("mbstring") ? 0 : 1);' 2>/dev/null; then
-              PHP="$candidate"
-              break
-            fi
-            echo "Skipped $candidate: $("$candidate" -r 'echo PHP_VERSION; foreach (["pdo_mysql", "mbstring"] as $e) { if (! extension_loaded($e)) { echo " (no $e)"; } }' 2>/dev/null)"
+            for flags in "" \
+              "-d display_startup_errors=0 -d extension=pdo -d extension=pdo_mysql -d extension=mbstring" \
+              "-d display_startup_errors=0 -d extension=mysqlnd -d extension=pdo -d extension=nd_pdo_mysql -d extension=mbstring"; do
+              # $flags is split into separate arguments on purpose. Startup warnings are hidden
+              # because a build that already includes an extension warns when asked to load it.
+              if "$candidate" $flags -r 'exit(PHP_SAPI === "cli" && PHP_VERSION_ID >= 80200 && extension_loaded("pdo_mysql") && extension_loaded("mbstring") ? 0 : 1);' </dev/null >/dev/null 2>&1; then
+                read -ra PHP <<<"$candidate $flags"
+                break 2
+              fi
+            done
+            info=$("$candidate" -r 'echo PHP_SAPI, " ", PHP_VERSION; foreach (["pdo_mysql", "mbstring"] as $e) { if (! extension_loaded($e)) { echo " (no $e)"; } }' </dev/null 2>/dev/null || true)
+            case "$info" in
+              cli*) echo "Skipped $candidate: $info, and the extensions could not be loaded" ;;
+              *) echo "Skipped $candidate: not a command-line PHP" ;;
+            esac
           done
-          if [ -z "$PHP" ]; then
-            echo "No PHP 8.2+ with pdo_mysql and mbstring was found for the command line."
-            echo "In cPanel > Select PHP Version > Extensions, tick pdo, pdo_mysql (or nd_pdo_mysql) and mbstring, then re-run."
+          if [ "${#PHP[@]}" -eq 0 ]; then
+            echo "No command-line PHP 8.2+ with pdo_mysql and mbstring was found."
+            echo "Ask Namecheap support to enable pdo_mysql and mbstring for command-line PHP on this account."
             exit 1
           fi
-          echo "Using $PHP"
-          "$PHP" -v | head -n 1
+          echo "Using ${PHP[*]}"
+          "${PHP[@]}" -v | head -n 1
 
-          "$PHP" artisan migrate --force
-          "$PHP" artisan optimize:clear
-          "$PHP" artisan optimize
+          "${PHP[@]}" artisan migrate --force
+          "${PHP[@]}" artisan optimize:clear
+          "${PHP[@]}" artisan optimize
           echo DEPLOY_FINALIZED
           REMOTE
           ) || true
