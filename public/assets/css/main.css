@@ -6709,31 +6709,6 @@ body, p, span, a, label, input, select, button, td, th, li,
   margin-bottom: 18px;
 }
 
-/* Services page service labels: crisp geometric rectangle, surface-aware */
-.eyebrow--label {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 5px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  color: var(--color-accent);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  margin-bottom: 18px;
-}
-
-/* On light sections (white surfaces) keep the whitesmoke fill */
-#sales-process .eyebrow--label,
-#payment-plans .eyebrow--label {
-  background: #f3f4f6;
-}
-
-/* On gray sections invert to a pure white fill */
-#inspection-process .eyebrow--label,
-#after-sales-process .eyebrow--label {
-  background: #ffffff;
-}
-
 /* Overview anchor cards: orange rules, icon medallions and hover fill */
 .service-grid--overview {
   border-top-color: rgba(240, 90, 54, 0.3);

@@ -64,7 +64,6 @@
 <section class="section" id="sales-process" aria-labelledby="sales-heading">
   <div class="container service-block">
     <div class="service-block__body">
-      <span class="eyebrow eyebrow--label">Service 01</span>
       <h2 id="sales-heading">Brand New &amp; Tokunbo Car Sales</h2>
       <p class="lead">
         Whether you are buying a sealed brand new unit or an inspected Tokunbo import, the process is
@@ -83,7 +82,6 @@
   <div class="container">
     <div class="service-block">
       <div class="service-block__body">
-        <span class="eyebrow eyebrow--label">Service 02</span>
         <h2 id="inspection-heading">Vehicle Inspection &amp; Verified History</h2>
         <p class="lead">
           No vehicle goes on display until it clears all four stages below. The written report is issued
@@ -132,7 +130,6 @@
 <section class="section" id="payment-plans" aria-labelledby="payment-heading">
   <div class="container service-block">
     <div class="service-block__body">
-      <span class="eyebrow eyebrow--label">Service 03</span>
       <h2 id="payment-heading">Flexible &amp; Ethical Payment Plans</h2>
       <p class="lead">
         Payment is structured around what you can actually afford, not around how much interest the
@@ -154,7 +151,6 @@
 <section class="section section--alt" id="after-sales-process" aria-labelledby="after-sales-heading">
   <div class="container service-block">
     <div class="service-block__body">
-      <span class="eyebrow eyebrow--label">Service 04</span>
       <h2 id="after-sales-heading">After-Sales Support &amp; Documentation</h2>
       <p class="lead">
         The sale does not end at handover. Documentation, first service scheduling and a follow-up
