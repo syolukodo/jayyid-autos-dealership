@@ -5748,8 +5748,22 @@ section[aria-labelledby="visit-heading"] .service-item__icon {
   }
 
   .admin-topbar {
+    position: relative;
     padding: 0 16px;
     gap: 12px;
+  }
+
+  /* The bell is not at the screen edge on phones (cart and avatar sit to its right), so a
+     panel anchored to it runs off the left side. Open it full width under the top bar instead. */
+  .notif {
+    position: static;
+  }
+
+  .notif-panel {
+    top: calc(100% + 6px);
+    left: 12px;
+    right: 12px;
+    width: auto;
   }
 
   .admin-topbar--welcome {
