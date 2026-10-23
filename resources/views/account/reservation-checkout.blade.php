@@ -73,7 +73,7 @@
              data-vehicle-categories='@json($selectionVehicles->filter(fn ($v) => $v->isAvailable())->map(fn ($v) => $v->category->value)->values())'
              class="mb-8 rounded-2xl border border-slate-200 bg-white shadow-card"
              aria-labelledby="ws-heading">
-      <div class="border-b border-slate-100 px-6 py-6 lg:px-8">
+      <div class="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <h2 id="ws-heading" class="text-xl font-bold text-slate-900">Checkout &amp; Reservation</h2>
 
         <ol class="ws-stepper mt-6" data-ws-stepper>
@@ -89,15 +89,15 @@
         </ol>
       </div>
 
-      <div class="grid grid-cols-1 gap-8 p-6 lg:grid-cols-12 lg:gap-10 lg:p-8">
+      <div class="grid grid-cols-1 gap-8 p-4 sm:p-6 lg:grid-cols-12 lg:gap-10 lg:p-8">
         <!-- ============ LEFT: ACTIVE STEP ============ -->
-        <div class="lg:col-span-7">
+        <div class="min-w-0 lg:col-span-7">
 
           <!-- STEP 1: SELECTED VEHICLES -->
           <div class="ws-panel is-active" data-ws-panel="1">
             <div class="flex items-center justify-between gap-3">
               <h3 class="text-base font-bold text-slate-900">Items (<span data-ws-count>{{ $selectionVehicles->count() }}</span> Selected)</h3>
-              <button type="button" class="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold text-slate-500 transition hover:bg-red-50 hover:text-red-600" data-ws-clear>
+              <button type="button" class="flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1 text-xs font-bold text-slate-500 transition hover:bg-red-50 hover:text-red-600" data-ws-clear>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 Clear Selection
               </button>
@@ -116,26 +116,26 @@
                 <a href="{{ route('inventory.index') }}" class="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-coral px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-coral-dark hover:text-white">Browse Our Cars</a>
               </div>
             @else
-              <ul class="mt-5 grid gap-4">
+              <ul class="mt-5 grid grid-cols-1 gap-4">
                 @foreach ($selectionVehicles as $item)
-                  <li class="flex items-center justify-between gap-4 rounded-2xl border p-5 shadow-sm transition {{ $item->isAvailable() ? 'border-slate-100 bg-white hover:border-slate-200' : 'border-coral/40 bg-coral/5' }}">
-                    <img src="{{ $item->imageUrl() }}" alt="{{ $item->title }}" class="h-20 w-32 flex-none rounded-xl border border-slate-100 object-cover" width="128" height="80" loading="lazy">
+                  <li class="relative flex min-w-0 items-center justify-between gap-3 rounded-2xl border p-4 shadow-sm transition sm:gap-4 sm:p-5 {{ $item->isAvailable() ? 'border-slate-100 bg-white hover:border-slate-200' : 'border-coral/40 bg-coral/5' }}">
+                    <img src="{{ $item->imageUrl() }}" alt="{{ $item->title }}" class="h-14 w-20 flex-none rounded-xl border border-slate-100 object-cover sm:h-20 sm:w-32" width="128" height="80" loading="lazy">
                     <div class="min-w-0 flex-1">
-                      <h4 class="mb-1 truncate text-base font-bold text-slate-900">{{ $item->title }}</h4>
+                      <h4 class="mb-1 line-clamp-2 break-words pr-9 text-sm font-bold leading-snug text-slate-900 sm:pr-0 sm:text-base" title="{{ $item->title }}">{{ $item->title }}</h4>
                       <span class="mb-2 inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">{{ $item->condition->value }}</span>
                       @if ($item->isAvailable())
-                        <p class="text-lg font-extrabold tracking-tight tabular-nums text-slate-900">{{ naira($item->price) }}</p>
+                        <p class="text-base font-extrabold tracking-tight tabular-nums text-slate-900 sm:text-lg">{{ naira($item->price) }}</p>
                       @else
                         <p class="text-sm font-bold text-coral">No longer available &mdash; {{ strtolower($item->status->value) }} by another buyer. Remove it to continue.</p>
                       @endif
                     </div>
 
                     <button type="button"
-                            class="flex flex-none cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-500 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                            class="absolute right-2.5 top-2.5 flex flex-none cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs font-bold sm:static sm:px-3.5 sm:py-2 text-slate-500 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                             data-ws-remove="{{ $item->id }}"
                             aria-label="Remove {{ $item->title }} from your selection">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-                      Remove
+                      <span class="hidden sm:inline">Remove</span>
                     </button>
                   </li>
                 @endforeach
@@ -424,7 +424,7 @@
         </div>
 
         <!-- ============ RIGHT: STICKY ORDER SUMMARY ============ -->
-        <aside class="lg:col-span-5">
+        <aside class="min-w-0 lg:col-span-5">
           <div class="lg:sticky lg:top-6 space-y-5 rounded-2xl border border-slate-200/60 bg-slate-50/60 p-6">
             <h3 class="text-base font-bold text-slate-900">Order Summary</h3>
 

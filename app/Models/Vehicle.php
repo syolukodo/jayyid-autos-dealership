@@ -116,11 +116,14 @@ class Vehicle extends Model
         return preg_match('/^(\d+)/', (string) $value, $match) ? static::query()->find((int) $match[1]) : null;
     }
 
+    /**
+     * Page title, e.g. "2021 Toyota Camry SE | Jayyid Autos - For Sale in Lagos, Nigeria - ₦28,500,000".
+     */
     public function seoTitle(): string
     {
-        $verb = $this->status === VehicleStatus::Sold ? 'Sold' : 'for Sale';
+        $verb = $this->status === VehicleStatus::Sold ? 'Sold' : 'For Sale';
 
-        return "{$this->title} {$verb} in Lagos, Nigeria - ".naira($this->price);
+        return "{$this->title} | Jayyid Autos - {$verb} in Lagos, Nigeria - ".naira($this->price);
     }
 
     public function seoDescription(): string

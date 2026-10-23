@@ -1,6 +1,6 @@
 @extends('layouts.public', ['active' => 'services'])
 
-@section('title', 'Car Sales, Inspection & Documentation Services in Lagos | Jayyid Autos')
+@section('title', 'Services | Jayyid Autos - Car Sales, Inspection & Documentation in Lagos')
 @section('description', 'How Jayyid Autos sells cars in Lagos, Nigeria: 150-point inspection, verified history reports, ethical payment plans, registration and after-sales support.')
 
 @section('content')

@@ -9,10 +9,10 @@
 @endphp
 
 @if ($landing)
-  @section('title', str_replace(' | Jayyid Autos', $pageSuffix.' | Jayyid Autos', $landing->title()))
+  @section('title', $landing->title($pageSuffix))
   @section('description', $landing->description($vehicles->total(), $fromPrice))
 @else
-  @section('title', 'Cars for Sale in Lagos, Nigeria - Tokunbo & Brand New'.$pageSuffix.' | Jayyid Autos')
+  @section('title', 'Our Cars'.$pageSuffix.' | Jayyid Autos - Tokunbo & Brand New Cars for Sale in Lagos, Nigeria')
   @section('description', 'Browse '.$vehicles->total().' inspected Tokunbo and brand new cars for sale in Lagos, Nigeria. Filter by make, body type and budget. Verified mileage and 0% interest payment plans.')
 @endif
 @section('canonical', $canonical)

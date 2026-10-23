@@ -33,7 +33,7 @@ class SeoTest extends TestCase
         $response = $this->get($url)->assertOk();
 
         $response->assertSee('<html lang="en-NG">', false)
-            ->assertSee('<title>2021 Toyota Camry SE for Sale in Lagos, Nigeria - ₦28,500,000 | Jayyid Autos</title>', false)
+            ->assertSee('<title>2021 Toyota Camry SE | Jayyid Autos - For Sale in Lagos, Nigeria - ₦28,500,000</title>', false)
             ->assertSee('<link rel="canonical" href="'.$url.'">', false)
             ->assertSee('hreflang="en-NG"', false)
             ->assertSee('hreflang="x-default"', false)
@@ -49,6 +49,27 @@ class SeoTest extends TestCase
         $this->assertSame('https://schema.org/InStock', $car['offers']['availability']);
         $this->assertNotNull(collect($schemas)->firstWhere('@type', 'AutoDealer'));
         $this->assertNotNull(collect($schemas)->firstWhere('@type', 'BreadcrumbList'));
+    }
+
+    public function test_page_titles_lead_with_the_page_name(): void
+    {
+        Vehicle::factory()->count(13)->create(['make' => 'Toyota', 'category' => VehicleCategory::SUV]);
+
+        $titles = [
+            route('home') => 'Home | Jayyid Autos - ',
+            route('inventory.index') => 'Our Cars | Jayyid Autos - ',
+            route('inventory.index', ['page' => 2]) => 'Our Cars - Page 2 | Jayyid Autos - ',
+            route('inventory.landing', 'toyota') => 'Toyota Cars | Jayyid Autos - ',
+            route('inventory.landing', 'suv') => 'SUVs | Jayyid Autos - ',
+            route('pages.services') => 'Services | Jayyid Autos - ',
+            route('pages.payment-options') => 'Payment Options | Jayyid Autos - ',
+            route('pages.about') => 'About | Jayyid Autos - ',
+            route('contact.show') => 'Contact | Jayyid Autos - ',
+        ];
+
+        foreach ($titles as $url => $start) {
+            $this->get($url)->assertOk()->assertSee('<title>'.e($start), false);
+        }
     }
 
     public function test_landing_pages_target_nigerian_searches(): void

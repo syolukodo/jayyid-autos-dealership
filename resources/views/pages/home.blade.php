@@ -1,6 +1,6 @@
 @extends('layouts.public', ['active' => 'home'])
 
-@section('title', 'Tokunbo & Brand New Cars for Sale in Lagos, Nigeria | Jayyid Autos')
+@section('title', 'Home | Jayyid Autos - Tokunbo & Brand New Cars for Sale in Lagos, Nigeria')
 @section('description', 'Buy inspected Tokunbo and brand new cars in Lagos, Nigeria. Verified mileage, honest prices, 150-point inspection and 0% interest payment plans at our Ikeja showroom.')
 
 @push('head')

@@ -5776,7 +5776,9 @@ section[aria-labelledby="visit-heading"] .service-item__icon {
     text-overflow: ellipsis;
   }
 
+  /* The icons and avatar keep their size; the greeting and heading give way (with an ellipsis). */
   .admin-topbar__actions {
+    flex: none;
     gap: 8px;
   }
 
@@ -5792,6 +5794,7 @@ section[aria-labelledby="visit-heading"] .service-item__icon {
 
   /* Collapse the profile pill to just the avatar; details live in the popover. */
   .admin-profile {
+    flex: none;
     padding: 3px;
     gap: 0;
   }

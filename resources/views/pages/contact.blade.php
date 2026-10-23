@@ -1,6 +1,6 @@
 @extends('layouts.public', ['active' => 'contact'])
 
-@section('title', 'Contact Jayyid Autos - Car Showroom in Ikeja, Lagos, Nigeria')
+@section('title', 'Contact | Jayyid Autos - Car Showroom in Ikeja, Lagos, Nigeria')
 @section('description', 'Visit the Jayyid Autos car showroom in Ikeja, Lagos, call our sales line or send an enquiry. Inspect any Tokunbo or brand new car before you buy. Open Monday to Saturday.')
 
 @section('content')

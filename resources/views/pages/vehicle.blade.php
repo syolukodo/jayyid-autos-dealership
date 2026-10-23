@@ -1,6 +1,6 @@
 @extends('layouts.public', ['active' => 'inventory'])
 
-@section('title', $vehicle->seoTitle().' | Jayyid Autos')
+@section('title', $vehicle->seoTitle())
 @section('description', $vehicle->seoDescription())
 @section('canonical', route('vehicles.show', $vehicle))
 @section('og_type', 'product')

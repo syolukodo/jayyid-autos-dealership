@@ -116,15 +116,22 @@ final class InventoryLanding
         };
     }
 
-    public function title(): string
+    /**
+     * "Page | Jayyid Autos - search phrase", e.g. "Toyota Cars | Jayyid Autos - Tokunbo & Brand New Toyota for Sale in Lagos, Nigeria".
+     *
+     * @param  string  $pageSuffix  e.g. " - Page 2", placed after the page name
+     */
+    public function title(string $pageSuffix = ''): string
     {
-        return match ($this->kind) {
+        [$page, $phrase] = match ($this->kind) {
             'condition' => $this->label === VehicleCondition::Tokunbo->value
-                ? 'Tokunbo (Foreign Used) Cars for Sale in Lagos, Nigeria | Jayyid Autos'
-                : 'Brand New Cars for Sale in Lagos, Nigeria | Jayyid Autos',
-            'category' => "{$this->label} for Sale in Lagos, Nigeria - Tokunbo & Brand New | Jayyid Autos",
-            default => "{$this->label} Cars for Sale in Lagos, Nigeria - Tokunbo & Brand New | Jayyid Autos",
+                ? ['Tokunbo Cars', 'Tokunbo (Foreign Used) Cars for Sale in Lagos, Nigeria']
+                : ['Brand New Cars', 'Brand New Cars for Sale in Lagos, Nigeria'],
+            'category' => [$this->label, "Tokunbo & Brand New {$this->label} for Sale in Lagos, Nigeria"],
+            default => ["{$this->label} Cars", "Tokunbo & Brand New {$this->label} for Sale in Lagos, Nigeria"],
         };
+
+        return $page.$pageSuffix.' | Jayyid Autos - '.$phrase;
     }
 
     /**

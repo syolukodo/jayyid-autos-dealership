@@ -1,6 +1,6 @@
 @extends('layouts.public', ['active' => 'payment'])
 
-@section('title', 'Car Payment Plans in Nigeria - 0% Interest Instalments | Jayyid Autos')
+@section('title', 'Payment Options | Jayyid Autos - 0% Interest Car Payment Plans in Nigeria')
 @section('description', 'Buy a car in Lagos with a 30% deposit and pay the balance over up to six months at 0% interest, pay in full, or trade in. Terms signed before any deposit.')
 
 @section('content')

@@ -1,6 +1,6 @@
 @extends('layouts.public', ['active' => 'ethics'])
 
-@section('title', 'About Jayyid Autos - Honest Car Dealer in Lagos, Nigeria')
+@section('title', 'About | Jayyid Autos - Honest Car Dealer in Lagos, Nigeria')
 @section('description', 'Jayyid Autos is an ethics-based car dealer in Lagos, Nigeria: verified mileage, upfront condition reports, zero hidden fees and written payment terms.')
 
 @section('content')

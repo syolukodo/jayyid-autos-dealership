@@ -1,6 +1,6 @@
 @extends('layouts.admin', ['section' => 'dashboard'])
 
-@section('title', 'Jayyid Autos Control Center')
+@section('title', 'Dashboard')
 @section('heading', 'Welcome back')
 
 @section('content')
