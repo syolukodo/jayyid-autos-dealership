@@ -1,0 +1,235 @@
+# Deploys https://jayyidautos.com to Namecheap shared hosting (cPanel).
+#
+#   1. tests     - the full test suite must pass, or nothing is deployed
+#   2. deploy    - builds production dependencies and uploads changed files over FTPS
+#   3. finalize  - over SSH: runs migrations and rebuilds Laravel's caches,
+#                  then checks the live site answers
+#
+# Repository secrets (Settings > Secrets and variables > Actions):
+#   CPANEL_HOST        server hostname, e.g. server123.web-hosting.com (or ftp.jayyidautos.com)
+#   CPANEL_USERNAME    cPanel username (the main account, so SSH works too)
+#   CPANEL_PASSWORD    cPanel password
+#   CPANEL_REMOTE_DIR  app folder relative to your home folder, e.g. jayyidautos/
+#                      (an absolute /home/<user>/jayyidautos/ also works)
+# Optional repository variable:
+#   CPANEL_SSH_PORT    defaults to 21098, Namecheap's SSH port
+#
+# The server keeps its own .env, uploaded photos and logs: they are never
+# uploaded from here and never deleted by a deploy.
+
+name: Deploy to production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time; a new push waits instead of cutting an upload short.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: '8.3'
+  SITE_URL: https://jayyidautos.com
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, dom, fileinfo, gd, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Locate Composer cache
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      # phpunit.xml switches the database to in-memory SQLite and mail to "array".
+      - name: Run tests
+        run: php artisan test
+
+  deploy:
+    name: Upload to cPanel
+    needs: tests
+    runs-on: ubuntu-latest
+    # The first upload sends all of vendor/ (thousands of files); later ones send only changes.
+    timeout-minutes: 90
+    environment:
+      name: production
+      url: ${{ env.SITE_URL }}
+
+    steps:
+      - name: Check deployment secrets
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USERNAME: ${{ secrets.CPANEL_USERNAME }}
+          CPANEL_PASSWORD: ${{ secrets.CPANEL_PASSWORD }}
+          CPANEL_REMOTE_DIR: ${{ secrets.CPANEL_REMOTE_DIR }}
+        run: |
+          missing=0
+          for name in CPANEL_HOST CPANEL_USERNAME CPANEL_PASSWORD CPANEL_REMOTE_DIR; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is not set."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, dom, fileinfo, gd
+          coverage: none
+
+      - name: Locate Composer cache
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      # No dev tools on the server; the package manifest in bootstrap/cache is rebuilt to match.
+      - name: Install production dependencies
+        run: composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction --no-progress
+
+      # FTP paths start at the account's home folder and the action needs a trailing slash.
+      - name: Resolve remote folder
+        id: remote
+        env:
+          REMOTE_DIR: ${{ secrets.CPANEL_REMOTE_DIR }}
+          CPANEL_USERNAME: ${{ secrets.CPANEL_USERNAME }}
+        run: |
+          dir="${REMOTE_DIR#/}"
+          dir="${dir#home/"$CPANEL_USERNAME"/}"
+          dir="${dir%/}"
+          if [ "$dir" = "home/$CPANEL_USERNAME" ] || [ "$dir" = "." ]; then dir=""; fi
+          echo "dir=${dir:-.}/" >> "$GITHUB_OUTPUT"
+
+      # Only files changed since the last deploy are sent (tracked in .ftp-deploy-sync-state.json
+      # on the server). Files that exist only on the server (.env, uploads, logs) are left alone.
+      # Note: the storage/**/.gitignore placeholders must be uploaded - they create the storage folders.
+      - name: Upload over FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USERNAME }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          protocol: ftps
+          port: 21
+          # Encrypted, but the certificate is not checked: cPanel's FTP certificate is issued to the
+          # server hostname. If CPANEL_HOST is that hostname you can change this to "strict".
+          security: loose
+          timeout: 120000
+          local-dir: ./
+          server-dir: ${{ steps.remote.outputs.dir }}
+          exclude: |
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            tests/**
+            .env
+            .env.*
+            .editorconfig
+            .gitattributes
+            phpunit.xml
+            README.md
+
+  finalize:
+    name: Migrate and verify
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Run migrations and rebuild caches over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          REMOTE_DIR: ${{ secrets.CPANEL_REMOTE_DIR }}
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USERNAME }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          port: ${{ vars.CPANEL_SSH_PORT || '21098' }}
+          envs: REMOTE_DIR
+          script: |
+            set -e
+
+            case "$REMOTE_DIR" in
+              /home/*) APP_DIR="$REMOTE_DIR" ;;
+              *) APP_DIR="$HOME/${REMOTE_DIR#/}" ;;
+            esac
+            cd "$APP_DIR"
+
+            if [ ! -f .env ]; then
+              echo "No .env in $APP_DIR. Create it (see .env.example) and re-run this workflow."
+              exit 1
+            fi
+
+            # The shell's default "php" can be older than the version chosen in "Select PHP Version".
+            PHP=""
+            for candidate in php /opt/alt/php84/usr/bin/php /opt/alt/php83/usr/bin/php /opt/alt/php82/usr/bin/php; do
+              if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -r 'exit(PHP_VERSION_ID >= 80200 ? 0 : 1);'; then
+                PHP="$candidate"
+                break
+              fi
+            done
+            if [ -z "$PHP" ]; then
+              echo "PHP 8.2 or newer was not found. Choose it in cPanel > Select PHP Version."
+              exit 1
+            fi
+            "$PHP" -v | head -n 1
+
+            "$PHP" artisan migrate --force
+            "$PHP" artisan optimize:clear
+            "$PHP" artisan optimize
+
+      - name: Check the live site
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE_URL/up" || true)
+            echo "Attempt $attempt: $SITE_URL/up answered HTTP $code"
+            if [ "$code" = "200" ]; then
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE_URL/" || true)
+              echo "Home page answered HTTP $code"
+              [ "$code" = "200" ] && exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$SITE_URL is not answering correctly. Check storage/logs/laravel.log on the server."
+          exit 1
