@@ -35,7 +35,7 @@ class ShowroomSeeder extends Seeder
         $this->seedUsers();
         $vehicleIds = $this->seedVehicles();
 
-        User::query()->where('email', 'buyer@jayyidautos.ng')->firstOrFail()
+        User::query()->where('email', 'buyer@jayyidautos.com')->firstOrFail()
             ->savedVehicles()->attach(array_fill_keys(array_slice($vehicleIds, 0, 3), ['created_at' => now()]));
 
         $this->seedInquiries();
@@ -49,17 +49,17 @@ class ShowroomSeeder extends Seeder
 
         // name, email, phone, password, role, status, joined
         $people = [
-            ['Abdulkabir Olaniyan', 'admin@jayyidautos.ng', '+234 803 456 7890', $password, UserRole::Admin, UserStatus::Active, '2024-01-08'],
-            [self::DEMO_BUYER, 'buyer@jayyidautos.ng', '+234 803 111 2244', $password, UserRole::Customer, UserStatus::Active, '2024-09-12'],
+            ['Abdulkabir Olaniyan', 'admin@jayyidautos.com', '+234 803 456 7890', $password, UserRole::Admin, UserStatus::Active, '2024-01-08'],
+            [self::DEMO_BUYER, 'buyer@jayyidautos.com', '+234 803 111 2244', $password, UserRole::Customer, UserStatus::Active, '2024-09-12'],
             ['Fatima Yusuf', 'fatima.yusuf@example.com', '+234 805 990 1122', null, UserRole::Customer, UserStatus::Active, '2026-09-28'],
             ['Tunde Bakare', 'tunde.bakare@example.com', '+234 802 445 7788', null, UserRole::Customer, UserStatus::Active, '2026-08-05'],
             ['Ngozi Eze', 'ngozi.eze@example.com', '+234 806 332 9010', null, UserRole::Customer, UserStatus::Active, '2026-07-19'],
             ['Ibrahim Sule', 'ibrahim.sule@example.com', '+234 809 776 5543', null, UserRole::Customer, UserStatus::Active, '2026-10-01'],
             ['Bisi Adeleke', 'bisi.adeleke@example.com', '+234 801 224 6677', null, UserRole::Customer, UserStatus::Active, '2026-06-14'],
             // Seeded staff have no password yet: send them an invite from Users & Staff.
-            ['Adeola Balogun', 'adeola@jayyidautos.ng', '+234 802 555 0110', null, UserRole::SalesOfficer, UserStatus::Active, '2026-01-14'],
-            ['Kunle Adeyemi', 'kunle@jayyidautos.ng', '+234 803 555 0121', null, UserRole::Accountant, UserStatus::Active, '2026-03-02'],
-            ['Halima Bello', 'halima@jayyidautos.ng', '+234 806 555 0132', null, UserRole::SalesOfficer, UserStatus::Suspended, '2026-05-21'],
+            ['Adeola Balogun', 'adeola@jayyidautos.com', '+234 802 555 0110', null, UserRole::SalesOfficer, UserStatus::Active, '2026-01-14'],
+            ['Kunle Adeyemi', 'kunle@jayyidautos.com', '+234 803 555 0121', null, UserRole::Accountant, UserStatus::Active, '2026-03-02'],
+            ['Halima Bello', 'halima@jayyidautos.com', '+234 806 555 0132', null, UserRole::SalesOfficer, UserStatus::Suspended, '2026-05-21'],
         ];
 
         foreach ($people as [$name, $email, $phone, $hash, $role, $status, $joined]) {

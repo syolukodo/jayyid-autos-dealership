@@ -65,7 +65,7 @@ return [
         'name' => 'Jayyid Autos',
         'tagline' => 'Brand new and Tokunbo vehicles sold with verified history, honest pricing and ethical payment terms.',
         'phones' => ['+234 803 456 7890', '+234 805 123 4567'],
-        'email' => 'sales@jayyidautos.ng',
+        'email' => 'sales@jayyidautos.com',
         'address' => '115 Ikeja Way, Lagos',
         'hours' => 'Monday to Saturday: 9:00am to 6:00pm',
         'hours_short' => 'Mon to Sat, 9:00am to 6:00pm',

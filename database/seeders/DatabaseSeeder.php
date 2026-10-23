@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\DB;
  * Demo data for a fresh database: `php artisan migrate --seed`.
  *
  * Demo sign-ins (password "jayyid2026"):
- *   admin@jayyidautos.ng   Administrator
- *   buyer@jayyidautos.ng   Customer
+ *   admin@jayyidautos.com   Administrator
+ *   buyer@jayyidautos.com   Customer
  */
 class DatabaseSeeder extends Seeder
 {

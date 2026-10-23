@@ -1,33 +1,37 @@
-# Deploys https://jayyidautos.com to Namecheap shared hosting (cPanel).
+# Deploys the app to Namecheap shared hosting (cPanel). The branch decides where:
+#
+#   main     -> https://jayyidautos.com       (production: real customers, never demo data)
+#   beta     -> https://beta.jayyidautos.com  (owners' test site: own database, demo data)
 #
 #   1. tests     - the full test suite must pass, or nothing is deployed
 #   2. deploy    - builds production dependencies, uploads changed files with rsync over SSH,
-#                  runs migrations and rebuilds Laravel's caches, then checks the live site
+#                  runs migrations and rebuilds Laravel's caches, then checks the site
 #
 # SSH needs shell access on the cPanel account (Namecheap support enables it).
 #
 # Repository secrets (Settings > Secrets and variables > Actions):
-#   CPANEL_HOST        server hostname, e.g. server123.web-hosting.com (or jayyidautos.com)
-#   CPANEL_USERNAME    cPanel username (the main account: SSH must be enabled for it)
-#   CPANEL_PASSWORD    cPanel password
-#   CPANEL_REMOTE_DIR  app folder relative to your home folder, e.g. jayyidautos/
-#                      (an absolute /home/<user>/jayyidautos/ also works)
+#   CPANEL_HOST         server hostname, e.g. server123.web-hosting.com (or jayyidautos.com)
+#   CPANEL_USERNAME     cPanel username (the main account: SSH must be enabled for it)
+#   CPANEL_PASSWORD     cPanel password
+#   CPANEL_REMOTE_DIR   production app folder relative to your home folder, e.g. jayyidautos.com/
+#   CPANEL_STAGING_DIR  beta app folder, e.g. beta.jayyidautos.com/ (only needed for the beta branch)
+#                       (absolute /home/<user>/... paths also work for both)
 # Optional repository variable:
-#   CPANEL_SSH_PORT    defaults to 21098, Namecheap's SSH port
+#   CPANEL_SSH_PORT     defaults to 21098, Namecheap's SSH port
 #
-# The server keeps its own .env, uploaded photos and logs: they are never
-# uploaded from here and never deleted by a deploy.
+# Each site keeps its own .env, uploaded photos and logs on the server: they are
+# never uploaded from here and never deleted by a deploy.
 
-name: Deploy to production
+name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, beta]
   workflow_dispatch:
 
-# One deploy at a time; a new push waits instead of cutting an upload short.
+# One deploy per site at a time; a new push waits instead of cutting an upload short.
 concurrency:
-  group: production-deploy
+  group: deploy-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -35,7 +39,8 @@ permissions:
 
 env:
   PHP_VERSION: '8.3'
-  SITE_URL: https://jayyidautos.com
+  IS_PRODUCTION: ${{ github.ref_name == 'main' }}
+  SITE_URL: ${{ github.ref_name == 'main' && 'https://jayyidautos.com' || 'https://beta.jayyidautos.com' }}
 
 jobs:
   tests:
@@ -78,13 +83,18 @@ jobs:
         run: php artisan test
 
   deploy:
-    name: Deploy to cPanel
+    name: Deploy to ${{ github.ref_name == 'main' && 'jayyidautos.com' || 'beta.jayyidautos.com' }}
     needs: tests
+    # A manual run from any other branch only runs the tests.
+    if: github.ref_name == 'main' || github.ref_name == 'beta'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
-      name: production
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
       url: ${{ env.SITE_URL }}
+    env:
+      REMOTE_DIR: ${{ github.ref_name == 'main' && secrets.CPANEL_REMOTE_DIR || secrets.CPANEL_STAGING_DIR }}
+      REMOTE_DIR_SECRET: ${{ github.ref_name == 'main' && 'CPANEL_REMOTE_DIR' || 'CPANEL_STAGING_DIR' }}
 
     steps:
       - name: Check deployment secrets
@@ -92,15 +102,18 @@ jobs:
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
           CPANEL_USERNAME: ${{ secrets.CPANEL_USERNAME }}
           CPANEL_PASSWORD: ${{ secrets.CPANEL_PASSWORD }}
-          CPANEL_REMOTE_DIR: ${{ secrets.CPANEL_REMOTE_DIR }}
         run: |
           missing=0
-          for name in CPANEL_HOST CPANEL_USERNAME CPANEL_PASSWORD CPANEL_REMOTE_DIR; do
+          for name in CPANEL_HOST CPANEL_USERNAME CPANEL_PASSWORD; do
             if [ -z "${!name}" ]; then
               echo "::error::Repository secret $name is not set."
               missing=1
             fi
           done
+          if [ -z "$REMOTE_DIR" ]; then
+            echo "::error::Repository secret $REMOTE_DIR_SECRET is not set."
+            missing=1
+          fi
           exit "$missing"
 
       - name: Check out code
@@ -133,20 +146,27 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq sshpass
 
-      # rsync paths are relative to the account's home folder. Refuse the home folder itself:
-      # it holds every domain on this account, and the app must live in its own folder.
+      # rsync paths are relative to the account's home folder. Refuse the home folder itself
+      # (it holds every domain on this account), and never let staging share production's folder.
       - name: Resolve remote folder
         id: remote
         env:
-          REMOTE_DIR: ${{ secrets.CPANEL_REMOTE_DIR }}
+          PRODUCTION_DIR: ${{ secrets.CPANEL_REMOTE_DIR }}
           CPANEL_USERNAME: ${{ secrets.CPANEL_USERNAME }}
         run: |
-          dir="${REMOTE_DIR#/}"
-          dir="${dir#home/"$CPANEL_USERNAME"/}"
-          dir="${dir#./}"
-          dir="${dir%/}"
+          normalise() {
+            local dir="${1#/}"
+            dir="${dir#home/"$CPANEL_USERNAME"/}"
+            dir="${dir#./}"
+            printf '%s' "${dir%/}"
+          }
+          dir=$(normalise "$REMOTE_DIR")
           if [ -z "$dir" ] || [ "$dir" = "." ] || [ "$dir" = "home/$CPANEL_USERNAME" ] || [ "$dir" = "public_html" ]; then
-            echo "::error::CPANEL_REMOTE_DIR must be the app's own folder (e.g. jayyidautos/), not the home folder or public_html."
+            echo "::error::$REMOTE_DIR_SECRET must be the app's own folder (e.g. jayyidautos.com/), not the home folder or public_html."
+            exit 1
+          fi
+          if [ "$IS_PRODUCTION" != "true" ] && [ "$dir" = "$(normalise "$PRODUCTION_DIR")" ]; then
+            echo "::error::CPANEL_STAGING_DIR points at the production folder. The beta site needs its own folder (e.g. beta.jayyidautos.com/)."
             exit 1
           fi
           echo "dir=$dir" >> "$GITHUB_OUTPUT"
@@ -201,12 +221,21 @@ jobs:
           APP_DIR: ${{ steps.remote.outputs.dir }}
         run: |
           output=$(sshpass -e ssh -p "$SSH_PORT" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$SSH_TARGET" \
-            "APP_DIR=$(printf %q "$APP_DIR") bash -s" 2>&1 <<'REMOTE'
+            "APP_DIR=$(printf %q "$APP_DIR") IS_PRODUCTION=$(printf %q "$IS_PRODUCTION") bash -s" 2>&1 <<'REMOTE'
           set -e
           cd "$HOME/$APP_DIR"
 
           if [ ! -f .env ]; then
             echo "No .env in $HOME/$APP_DIR. Create it (see .env.example) and re-run this workflow."
+            exit 1
+          fi
+
+          # The value Laravel uses: the last APP_ENV= / APP_DEBUG= line in .env, without quotes.
+          env_value() { grep -E "^$1=" .env | tail -n 1 | cut -d= -f2- | tr -d "\"' \r"; }
+          APP_ENV_VALUE=$(env_value APP_ENV)
+          echo "This .env says APP_ENV=$APP_ENV_VALUE"
+          if [ "$IS_PRODUCTION" = "true" ] && [ "$(env_value APP_DEBUG)" = "true" ]; then
+            echo "Refusing to deploy: APP_DEBUG=true in the production .env would show code and settings to every visitor."
             exit 1
           fi
 
@@ -244,6 +273,17 @@ jobs:
           "${PHP[@]}" -v | head -n 1
 
           "${PHP[@]}" artisan migrate --force
+
+          # Demo data on the beta site only. The seeder itself also skips any database that
+          # already has accounts, so this loads it once and never touches it again.
+          if [ "$IS_PRODUCTION" != "true" ]; then
+            if [ "$APP_ENV_VALUE" = "production" ]; then
+              echo "Refusing to load demo data: this .env says APP_ENV=production. The beta site's .env must say APP_ENV=staging."
+              exit 1
+            fi
+            "${PHP[@]}" artisan db:seed --force
+          fi
+
           "${PHP[@]}" artisan optimize:clear
           "${PHP[@]}" artisan optimize
           echo DEPLOY_FINALIZED
@@ -251,11 +291,11 @@ jobs:
           ) || true
           echo "$output"
           if ! grep -q '^DEPLOY_FINALIZED$' <<<"$output"; then
-            echo "::error::Migrations did not finish on the server. See the output above."
+            echo "::error::The server-side steps did not finish. See the output above."
             exit 1
           fi
 
-      - name: Check the live site
+      - name: Check the site
         run: |
           for attempt in 1 2 3 4 5 6; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE_URL/up" || true)

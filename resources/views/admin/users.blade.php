@@ -210,7 +210,7 @@
             <div class="field">
               <label class="field__label" for="st-email">Work email *</label>
               <input class="field__control{{ $addErrors->has('email') ? ' is-invalid' : '' }}" id="st-email" name="email" type="email" required autocomplete="off"
-                     data-validate="email" data-label="Work email" placeholder="name@jayyidautos.ng" value="{{ $addErrors->any() ? old('email') : '' }}">
+                     data-validate="email" data-label="Work email" placeholder="name@jayyidautos.com" value="{{ $addErrors->any() ? old('email') : '' }}">
               <span class="field__error">{{ $addErrors->first('email') }}</span>
             </div>
             <div class="field">

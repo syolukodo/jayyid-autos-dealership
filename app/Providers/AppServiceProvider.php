@@ -29,9 +29,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Surface N+1 queries and mass-assignment typos during development.
-        Model::preventLazyLoading(! $this->app->environment('production'));
-        Model::preventSilentlyDiscardingAttributes(! $this->app->environment('production'));
+        // Surface N+1 queries and mass-assignment typos during development. Off on staging too,
+        // so the beta site behaves exactly like production for the people testing it.
+        $strict = $this->app->environment('local', 'testing');
+        Model::preventLazyLoading($strict);
+        Model::preventSilentlyDiscardingAttributes($strict);
 
         // Per account from one address, plus a ceiling per address so one machine cannot spray many accounts.
         RateLimiter::for('login', fn (Request $request) => [

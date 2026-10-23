@@ -30,13 +30,13 @@ class BackOfficeTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.staff.store'), [
             'name' => '  Adeola   Balogun ',
-            'email' => 'Adeola@JayyidAutos.ng',
+            'email' => 'Adeola@JayyidAutos.com',
             'phone' => '+234 802 555 0110',
             'role' => 'Sales Officer',
             'status' => 'Active',
         ])->assertRedirect(route('admin.users.index', ['tab' => 'staff']));
 
-        $staff = User::query()->where('email', 'adeola@jayyidautos.ng')->sole();
+        $staff = User::query()->where('email', 'adeola@jayyidautos.com')->sole();
         $this->assertSame('Adeola Balogun', $staff->full_name);
         $this->assertSame(UserRole::SalesOfficer, $staff->role);
         $this->assertTrue($staff->hasPendingInvite());

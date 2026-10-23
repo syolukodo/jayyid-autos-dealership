@@ -30,8 +30,8 @@ Demo sign-ins (password `jayyid2026`):
 
 | Email                  | Role          |
 |------------------------|---------------|
-| admin@jayyidautos.ng   | Administrator |
-| buyer@jayyidautos.ng   | Customer      |
+| admin@jayyidautos.com   | Administrator |
+| buyer@jayyidautos.com   | Customer      |
 
 Seeded staff (sales officer, accountant) have no password yet. Send them an
 invite from **Admin > Users & Staff**.

@@ -27,14 +27,14 @@ class SeededDemoTest extends TestCase
     public function test_seed_loads_the_catalogue_and_demo_accounts(): void
     {
         $this->assertGreaterThan(10, Vehicle::query()->count());
-        $this->assertTrue(User::query()->where('email', 'admin@jayyidautos.ng')->sole()->isStaff());
-        $this->assertNotNull(User::query()->where('email', 'buyer@jayyidautos.ng')->sole()->currentSchedule());
+        $this->assertTrue(User::query()->where('email', 'admin@jayyidautos.com')->sole()->isStaff());
+        $this->assertNotNull(User::query()->where('email', 'buyer@jayyidautos.com')->sole()->currentSchedule());
         $this->assertGreaterThan(0, PaymentSchedule::query()->count());
     }
 
     public function test_demo_accounts_sign_in_with_the_documented_password(): void
     {
-        $this->post(route('login'), ['email' => 'buyer@jayyidautos.ng', 'password' => 'jayyid2026'])
+        $this->post(route('login'), ['email' => 'buyer@jayyidautos.com', 'password' => 'jayyid2026'])
             ->assertRedirect(route('account.dashboard'));
     }
 
@@ -49,7 +49,7 @@ class SeededDemoTest extends TestCase
 
     public function test_customer_portal_renders_for_the_demo_buyer(): void
     {
-        $buyer = User::query()->where('email', 'buyer@jayyidautos.ng')->sole();
+        $buyer = User::query()->where('email', 'buyer@jayyidautos.com')->sole();
         $vehicle = Vehicle::query()->where('status', 'Available')->first();
         $this->actingAs($buyer);
 
@@ -65,7 +65,7 @@ class SeededDemoTest extends TestCase
 
     public function test_back_office_renders_for_the_demo_admin(): void
     {
-        $this->actingAs(User::query()->where('email', 'admin@jayyidautos.ng')->sole());
+        $this->actingAs(User::query()->where('email', 'admin@jayyidautos.com')->sole());
 
         foreach (['admin.dashboard', 'admin.vehicles.index', 'admin.inquiries.index', 'admin.users.index', 'admin.payments.index', 'admin.promo-codes.index', 'admin.settings.edit'] as $route) {
             $this->get(route($route))->assertOk();
